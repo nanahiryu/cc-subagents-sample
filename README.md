@@ -1,48 +1,48 @@
 # cc-subagents-sample
 
-A Todo CRUD application demonstrating the use of subagents (owner/executer/checker) for systematic feature development.
+Subagents（owner/executer/checker）を使用した体系的な機能開発を実証する Todo CRUD アプリケーション。
 
-## Tech Stack
+## 技術スタック
 
-- **Frontend**: React + TypeScript + Vite
-- **Backend**: Hono (Node runtime)
-- **Database**: PostgreSQL
+- **フロントエンド**: React + TypeScript + Vite
+- **バックエンド**: Hono (Node runtime)
+- **データベース**: PostgreSQL
 - **ORM**: Prisma
-- **Package Manager**: pnpm
+- **パッケージマネージャー**: pnpm
 
-## Project Structure
+## プロジェクト構造
 
 ```
 /
 ├─ apps/
 │  ├─ frontend/       # React + TS
 │  └─ backend/        # Hono API
-├─ prisma/            # Prisma schema / migrations / seed
-├─ tests/             # Test files
-├─ docs/              # Documentation
+├─ prisma/            # Prisma スキーマ / マイグレーション / シード
+├─ tests/             # テストファイル
+├─ docs/              # ドキュメント
 │  ├─ requirements/
 │  └─ plans/
 └─ .claude/
-   └─ agents/         # Subagent definitions
+   └─ agents/         # Subagent 定義
 ```
 
-## Setup
+## セットアップ
 
-### Prerequisites
+### 前提条件
 
 - Node.js 20+
 - pnpm
-- PostgreSQL (or Docker)
+- PostgreSQL（または Docker）
 
-### 1. Install Dependencies
+### 1. 依存関係のインストール
 
 ```bash
 pnpm install
 ```
 
-### 2. Setup Database
+### 2. データベースのセットアップ
 
-Start PostgreSQL (example with Docker):
+PostgreSQL を起動（Docker を使用する場合）:
 
 ```bash
 docker run --name todo-postgres \
@@ -53,83 +53,83 @@ docker run --name todo-postgres \
   -d postgres:16
 ```
 
-For testing, create a test database:
+テスト用データベースを作成:
 
 ```bash
 docker exec -it todo-postgres psql -U user -d todo -c "CREATE DATABASE todo_test;"
 ```
 
-### 3. Configure Environment
+### 3. 環境変数の設定
 
-Copy `.env.example` to `.env` and update the `DATABASE_URL`:
+`.env.example` を `.env` にコピーして `DATABASE_URL` を更新:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
+`.env` を編集:
 
 ```
 DATABASE_URL="postgresql://user:password@localhost:5432/todo"
 PORT=8787
 ```
 
-### 4. Run Migrations
+### 4. マイグレーションの実行
 
 ```bash
 pnpm db:migrate
 pnpm db:generate
 ```
 
-### 5. Seed Database (Optional)
+### 5. データベースのシード（任意）
 
 ```bash
 pnpm db:seed
 ```
 
-### 6. Start Development Servers
+### 6. 開発サーバーの起動
 
-In separate terminals:
+別々のターミナルで実行:
 
 ```bash
-# Terminal 1: Backend (http://localhost:8787)
+# ターミナル 1: バックエンド (http://localhost:8787)
 pnpm dev:backend
 
-# Terminal 2: Frontend (http://localhost:5173)
+# ターミナル 2: フロントエンド (http://localhost:5173)
 pnpm dev:frontend
 ```
 
-Or run both together:
+または両方を同時に起動:
 
 ```bash
 pnpm dev
 ```
 
-## Available Scripts
+## 利用可能なスクリプト
 
-- `pnpm dev` - Start both backend and frontend
-- `pnpm build` - Build both apps
-- `pnpm lint` - Run linting
-- `pnpm typecheck` - Run type checking
-- `pnpm test` - Run tests
-- `pnpm db:migrate` - Run Prisma migrations
-- `pnpm db:generate` - Generate Prisma client
-- `pnpm db:seed` - Seed database with sample data
+- `pnpm dev` - バックエンドとフロントエンドを両方起動
+- `pnpm build` - 両方のアプリをビルド
+- `pnpm lint` - リンティングを実行
+- `pnpm typecheck` - 型チェックを実行
+- `pnpm test` - テストを実行
+- `pnpm db:migrate` - Prisma マイグレーションを実行
+- `pnpm db:generate` - Prisma クライアントを生成
+- `pnpm db:seed` - サンプルデータでデータベースをシード
 
-## API Endpoints
+## API エンドポイント
 
-- `GET /api/todos` - List todos (with filtering)
-- `POST /api/todos` - Create a new todo
-- `GET /api/todos/:id` - Get a specific todo
-- `PATCH /api/todos/:id` - Update a todo
-- `DELETE /api/todos/:id` - Delete a todo
+- `GET /api/todos` - Todo 一覧を取得（フィルタリング可能）
+- `POST /api/todos` - 新しい Todo を作成
+- `GET /api/todos/:id` - 特定の Todo を取得
+- `PATCH /api/todos/:id` - Todo を更新
+- `DELETE /api/todos/:id` - Todo を削除
 
-## Development Workflow
+## 開発ワークフロー
 
-This project follows a subagent-based workflow:
+このプロジェクトは subagent ベースのワークフローに従います:
 
-1. **owner**: Breaks down features into small, 1-commit tasks
-2. **executer**: Implements tasks and ensures tests pass
-3. **checker**: Adds comprehensive tests and validates quality
+1. **owner**: 機能を小さな 1 コミット単位のタスクに分解
+2. **executer**: タスクを実装し、テストが通ることを確認
+3. **checker**: 包括的なテストを追加し、品質を検証
 
-See `docs/plans/` for task definitions and execution logs.
+タスク定義と実行ログについては `docs/plans/` を参照してください。

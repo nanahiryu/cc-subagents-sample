@@ -7,7 +7,9 @@
     "dev:frontend": "pnpm --filter frontend dev",
     "dev": "pnpm run dev:backend & pnpm run dev:frontend",
     "build": "pnpm --filter backend build && pnpm --filter frontend build",
-    "lint": "pnpm --filter backend lint && pnpm --filter frontend lint",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
     "test": "pnpm --filter backend test && pnpm --filter frontend test",
     "typecheck": "pnpm --filter backend typecheck && pnpm --filter frontend typecheck",
     "db:migrate": "prisma migrate dev",
@@ -15,6 +17,7 @@
     "db:seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@types/node": "^20.11.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
