@@ -9,6 +9,8 @@ Subagents（owner/executer/checker）を使用した体系的な機能開発を�
 - **データベース**: PostgreSQL
 - **ORM**: Prisma
 - **パッケージマネージャー**: pnpm
+- **コンテナ**: Docker + Docker Compose
+- **タスクランナー**: Makefile
 
 ## プロジェクト構造
 
@@ -30,82 +32,92 @@ Subagents（owner/executer/checker）を使用した体系的な機能開発を�
 
 ### 前提条件
 
-- Node.js 20+
-- pnpm
-- PostgreSQL（または Docker）
+- Docker & Docker Compose
+- pnpm（ローカル開発時のみ）
+- Make
 
-### 1. 依存関係のインストール
-
-```bash
-pnpm install
-```
-
-### 2. データベースのセットアップ
-
-PostgreSQL を起動（Docker を使用する場合）:
+### クイックスタート（Docker 環境）
 
 ```bash
-docker run --name todo-postgres \
-  -e POSTGRES_USER=user \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=todo \
-  -p 5432:5432 \
-  -d postgres:16
+# 初回セットアップ（依存関係 + DB起動 + マイグレーション + シード）
+make setup
+
+# すべてのサービスを起動
+make up
 ```
 
-テスト用データベースを作成:
+これだけで以下にアクセスできます：
+- **フロントエンド**: http://localhost:5173
+- **バックエンド**: http://localhost:8787
+- **データベース**: localhost:5432
+
+### ローカル開発（Docker なし）
+
+Docker を使わずにローカルで開発する場合：
+
+1. **依存関係のインストール**
+   ```bash
+   pnpm install
+   ```
+
+2. **PostgreSQL を起動**（別途必要）
+   ```bash
+   docker run --name todo-postgres \
+     -e POSTGRES_USER=user \
+     -e POSTGRES_PASSWORD=password \
+     -e POSTGRES_DB=todo \
+     -p 5432:5432 \
+     -d postgres:16
+   ```
+
+3. **環境変数の設定**
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **マイグレーションとシード**
+   ```bash
+   pnpm db:generate
+   pnpm db:migrate
+   pnpm db:seed
+   ```
+
+5. **開発サーバー起動**
+   ```bash
+   pnpm dev
+   ```
+
+## 利用可能なコマンド
+
+### Makefile コマンド（推奨）
+
+Docker 環境での操作は Makefile で簡単に実行できます：
 
 ```bash
-docker exec -it todo-postgres psql -U user -d todo -c "CREATE DATABASE todo_test;"
+make help              # すべてのコマンドを表示
+make setup             # 初回セットアップ
+make up                # すべてのサービスを起動
+make down              # すべてのサービスを停止
+make restart           # すべてのサービスを再起動
+make logs              # すべてのログを表示
+make logs-backend      # バックエンドのログを表示
+make logs-frontend     # フロントエンドのログを表示
+make logs-db           # データベースのログを表示
+make ps                # 実行中のコンテナを表示
+make migrate           # データベースマイグレーション
+make seed              # シードデータを投入
+make reset             # データベースをリセット
+make clean             # すべてのコンテナ・ボリュームを削除
+make shell-backend     # バックエンドコンテナにシェルで入る
+make shell-frontend    # フロントエンドコンテナにシェルで入る
+make shell-db          # データベースにpsqlで接続
+make lint              # Biome でリンティング
+make format            # Biome でフォーマット
+make typecheck         # TypeScript 型チェック
+make test              # テスト実行
 ```
 
-### 3. 環境変数の設定
-
-`.env.example` を `.env` にコピーして `DATABASE_URL` を更新:
-
-```bash
-cp .env.example .env
-```
-
-`.env` を編集:
-
-```
-DATABASE_URL="postgresql://user:password@localhost:5432/todo"
-PORT=8787
-```
-
-### 4. マイグレーションの実行
-
-```bash
-pnpm db:migrate
-pnpm db:generate
-```
-
-### 5. データベースのシード（任意）
-
-```bash
-pnpm db:seed
-```
-
-### 6. 開発サーバーの起動
-
-別々のターミナルで実行:
-
-```bash
-# ターミナル 1: バックエンド (http://localhost:8787)
-pnpm dev:backend
-
-# ターミナル 2: フロントエンド (http://localhost:5173)
-pnpm dev:frontend
-```
-
-または両方を同時に起動:
-
-```bash
-pnpm dev
-```
-
-## 利用可能なスクリプト
+### pnpm スクリプト（ローカル開発用）
 
 - `pnpm dev` - バックエンドとフロントエンドを両方起動
 - `pnpm build` - 両方のアプリをビルド
