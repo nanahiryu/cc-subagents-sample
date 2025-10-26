@@ -1,4 +1,4 @@
-import type { Todo, CreateTodoInput, UpdateTodoInput } from './types';
+import type { CreateTodoInput, Todo, UpdateTodoInput } from './types';
 
 const API_BASE = '/api';
 

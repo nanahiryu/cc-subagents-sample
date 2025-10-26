@@ -1,10 +1,6 @@
 import { Hono } from 'hono';
 import { prisma } from '../db';
-import {
-  createTodoSchema,
-  updateTodoSchema,
-  getTodosQuerySchema,
-} from '../schemas';
+import { createTodoSchema, getTodosQuerySchema, updateTodoSchema } from '../schemas';
 
 const app = new Hono();
 
@@ -20,7 +16,10 @@ app.get('/', async (c) => {
 
   const where: {
     completed?: boolean;
-    OR?: Array<{ title: { contains: string; mode: 'insensitive' } } | { description: { contains: string; mode: 'insensitive' } }>;
+    OR?: Array<
+      | { title: { contains: string; mode: 'insensitive' } }
+      | { description: { contains: string; mode: 'insensitive' } }
+    >;
   } = {};
 
   if (completed !== undefined) {
@@ -36,8 +35,8 @@ app.get('/', async (c) => {
 
   const todos = await prisma.todo.findMany({
     where,
-    take: limit ? parseInt(limit, 10) : undefined,
-    skip: offset ? parseInt(offset, 10) : undefined,
+    take: limit ? Number.parseInt(limit, 10) : undefined,
+    skip: offset ? Number.parseInt(offset, 10) : undefined,
     orderBy: { createdAt: 'desc' },
   });
 

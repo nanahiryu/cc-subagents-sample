@@ -6,10 +6,13 @@ import todosRouter from './routes/todos';
 const app = new Hono();
 
 // CORS middleware
-app.use('/*', cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true,
-}));
+app.use(
+  '/*',
+  cors({
+    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    credentials: true,
+  }),
+);
 
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok' }));
@@ -23,7 +26,7 @@ app.onError((err, c) => {
   return c.json({ error: 'Internal server error' }, 500);
 });
 
-const port = parseInt(process.env.PORT || '8787', 10);
+const port = Number.parseInt(process.env.PORT || '8787', 10);
 
 console.log(`Server is running on http://localhost:${port}`);
 

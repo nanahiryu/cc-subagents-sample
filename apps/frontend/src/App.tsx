@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import type { Todo, CreateTodoInput } from './types';
-import { getTodos, createTodo, updateTodo, deleteTodo } from './api';
+import { useEffect, useState } from 'react';
+import { createTodo, deleteTodo, getTodos, updateTodo } from './api';
+import type { CreateTodoInput, Todo } from './types';
 import './App.css';
 
 function App() {
@@ -76,7 +76,9 @@ function App() {
       {error && (
         <div className="error">
           {error}
-          <button onClick={() => setError(null)}>×</button>
+          <button type="button" onClick={() => setError(null)}>
+            ×
+          </button>
         </div>
       )}
 
@@ -117,6 +119,7 @@ function App() {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => handleDelete(todo.id)}
                 className="delete-btn"
                 aria-label={`Delete "${todo.title}"`}
