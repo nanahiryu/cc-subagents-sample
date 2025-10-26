@@ -109,7 +109,9 @@ pnpm dev
 
 - `pnpm dev` - バックエンドとフロントエンドを両方起動
 - `pnpm build` - 両方のアプリをビルド
-- `pnpm lint` - リンティングを実行
+- `pnpm lint` - Biome でリンティングを実行
+- `pnpm lint:fix` - Biome でリンティングを実行し、自動修正
+- `pnpm format` - Biome でコードをフォーマット
 - `pnpm typecheck` - 型チェックを実行
 - `pnpm test` - テストを実行
 - `pnpm db:migrate` - Prisma マイグレーションを実行
