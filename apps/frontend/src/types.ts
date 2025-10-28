@@ -1,3 +1,15 @@
+export interface Tag {
+  id: string;
+  name: string;
+  createdAt?: string;
+}
+
+export interface TodoTag {
+  todoId: string;
+  tagId: string;
+  tag: Tag;
+}
+
 export interface Todo {
   id: string;
   title: string;
@@ -6,6 +18,7 @@ export interface Todo {
   completed: boolean;
   createdAt: string;
   updatedAt: string;
+  tags?: TodoTag[];
 }
 
 export interface CreateTodoInput {
@@ -20,4 +33,10 @@ export interface UpdateTodoInput {
   description?: string;
   dueDate?: string;
   completed?: boolean;
+}
+
+export interface TagWithCount {
+  id: string;
+  name: string;
+  count: number;
 }
