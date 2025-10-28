@@ -5,6 +5,7 @@ export const createTodoSchema = z.object({
   description: z.string().optional(),
   dueDate: z.string().datetime().optional(),
   completed: z.boolean().optional(),
+  tags: z.array(z.string()).optional(),
 });
 
 export const updateTodoSchema = z.object({
@@ -12,6 +13,7 @@ export const updateTodoSchema = z.object({
   description: z.string().optional(),
   dueDate: z.string().datetime().optional(),
   completed: z.boolean().optional(),
+  tags: z.array(z.string()).optional(),
 });
 
 export const getTodosQuerySchema = z.object({
@@ -36,3 +38,10 @@ export const createTagSchema = z.object({
 });
 
 export type CreateTagInput = z.infer<typeof createTagSchema>;
+
+// Todo-Tag association schemas
+export const addTagsToTodoSchema = z.object({
+  tagNames: z.array(z.string()).min(1, 'At least one tag name is required'),
+});
+
+export type AddTagsToTodoInput = z.infer<typeof addTagsToTodoSchema>;

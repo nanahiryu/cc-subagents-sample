@@ -1,6 +1,12 @@
 import { Hono } from 'hono';
 import { prisma } from '../db';
-import { createTodoSchema, getTodosQuerySchema, updateTodoSchema } from '../schemas';
+import {
+  addTagsToTodoSchema,
+  createTodoSchema,
+  getTodosQuerySchema,
+  updateTodoSchema,
+} from '../schemas';
+import { normalizeTagName } from '../utils/tags';
 
 const app = new Hono();
 
@@ -38,6 +44,13 @@ app.get('/', async (c) => {
     take: limit ? Number.parseInt(limit, 10) : undefined,
     skip: offset ? Number.parseInt(offset, 10) : undefined,
     orderBy: { createdAt: 'desc' },
+    include: {
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
+    },
   });
 
   return c.json(todos);
@@ -52,8 +65,9 @@ app.post('/', async (c) => {
     return c.json({ error: 'Invalid input', details: result.error.errors }, 400);
   }
 
-  const { title, description, dueDate, completed } = result.data;
+  const { title, description, dueDate, completed, tags } = result.data;
 
+  // Create todo
   const todo = await prisma.todo.create({
     data: {
       title,
@@ -63,7 +77,45 @@ app.post('/', async (c) => {
     },
   });
 
-  return c.json(todo, 201);
+  // Add tags if provided
+  if (tags && tags.length > 0) {
+    for (const tagName of tags) {
+      const normalizedName = normalizeTagName(tagName);
+
+      // Find or create tag
+      let tag = await prisma.tag.findUnique({
+        where: { name: normalizedName },
+      });
+
+      if (!tag) {
+        tag = await prisma.tag.create({
+          data: { name: normalizedName },
+        });
+      }
+
+      // Create association
+      await prisma.todoTag.create({
+        data: {
+          todoId: todo.id,
+          tagId: tag.id,
+        },
+      });
+    }
+  }
+
+  // Return todo with tags
+  const todoWithTags = await prisma.todo.findUnique({
+    where: { id: todo.id },
+    include: {
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
+    },
+  });
+
+  return c.json(todoWithTags, 201);
 });
 
 // GET /api/todos/:id - Get a specific todo
@@ -72,6 +124,13 @@ app.get('/:id', async (c) => {
 
   const todo = await prisma.todo.findUnique({
     where: { id },
+    include: {
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
+    },
   });
 
   if (!todo) {
@@ -91,9 +150,10 @@ app.patch('/:id', async (c) => {
     return c.json({ error: 'Invalid input', details: result.error.errors }, 400);
   }
 
-  const { title, description, dueDate, completed } = result.data;
+  const { title, description, dueDate, completed, tags } = result.data;
 
   try {
+    // Update todo fields
     const todo = await prisma.todo.update({
       where: { id },
       data: {
@@ -104,7 +164,53 @@ app.patch('/:id', async (c) => {
       },
     });
 
-    return c.json(todo);
+    // If tags are provided, replace all existing tags
+    if (tags !== undefined) {
+      // Delete all existing tag associations
+      await prisma.todoTag.deleteMany({
+        where: { todoId: id },
+      });
+
+      // Add new tags
+      if (tags.length > 0) {
+        for (const tagName of tags) {
+          const normalizedName = normalizeTagName(tagName);
+
+          // Find or create tag
+          let tag = await prisma.tag.findUnique({
+            where: { name: normalizedName },
+          });
+
+          if (!tag) {
+            tag = await prisma.tag.create({
+              data: { name: normalizedName },
+            });
+          }
+
+          // Create association
+          await prisma.todoTag.create({
+            data: {
+              todoId: id,
+              tagId: tag.id,
+            },
+          });
+        }
+      }
+    }
+
+    // Return updated todo with tags
+    const updatedTodo = await prisma.todo.findUnique({
+      where: { id },
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
+    });
+
+    return c.json(updatedTodo);
   } catch (error) {
     return c.json({ error: 'Todo not found' }, 404);
   }
@@ -122,6 +228,113 @@ app.delete('/:id', async (c) => {
     return c.json({ message: 'Todo deleted successfully' });
   } catch (error) {
     return c.json({ error: 'Todo not found' }, 404);
+  }
+});
+
+// POST /api/todos/:todoId/tags - Add tags to a todo
+app.post('/:todoId/tags', async (c) => {
+  const todoId = c.req.param('todoId');
+  const body = await c.req.json();
+  const result = addTagsToTodoSchema.safeParse(body);
+
+  if (!result.success) {
+    return c.json({ error: 'Invalid input', details: result.error.errors }, 400);
+  }
+
+  const { tagNames } = result.data;
+
+  // Check if todo exists
+  const todo = await prisma.todo.findUnique({
+    where: { id: todoId },
+  });
+
+  if (!todo) {
+    return c.json({ error: 'Todo not found' }, 404);
+  }
+
+  // Process each tag name
+  for (const tagName of tagNames) {
+    const normalizedName = normalizeTagName(tagName);
+
+    // Find or create tag
+    let tag = await prisma.tag.findUnique({
+      where: { name: normalizedName },
+    });
+
+    if (!tag) {
+      tag = await prisma.tag.create({
+        data: { name: normalizedName },
+      });
+    }
+
+    // Create association (idempotent - ignore if already exists)
+    await prisma.todoTag.upsert({
+      where: {
+        todoId_tagId: {
+          todoId,
+          tagId: tag.id,
+        },
+      },
+      create: {
+        todoId,
+        tagId: tag.id,
+      },
+      update: {}, // No update needed, just ensure it exists
+    });
+  }
+
+  // Return todo with tags
+  const updatedTodo = await prisma.todo.findUnique({
+    where: { id: todoId },
+    include: {
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
+    },
+  });
+
+  return c.json(updatedTodo);
+});
+
+// DELETE /api/todos/:todoId/tags/:tagId - Remove a tag from a todo
+app.delete('/:todoId/tags/:tagId', async (c) => {
+  const todoId = c.req.param('todoId');
+  const tagId = c.req.param('tagId');
+
+  // Check if todo exists
+  const todo = await prisma.todo.findUnique({
+    where: { id: todoId },
+  });
+
+  if (!todo) {
+    return c.json({ error: 'Todo not found' }, 404);
+  }
+
+  // Check if tag exists
+  const tag = await prisma.tag.findUnique({
+    where: { id: tagId },
+  });
+
+  if (!tag) {
+    return c.json({ error: 'Tag not found' }, 404);
+  }
+
+  // Delete the association
+  try {
+    await prisma.todoTag.delete({
+      where: {
+        todoId_tagId: {
+          todoId,
+          tagId,
+        },
+      },
+    });
+
+    return c.body(null, 204);
+  } catch (error) {
+    return c.json({ error: 'Tag association not found' }, 404);
   }
 });
 

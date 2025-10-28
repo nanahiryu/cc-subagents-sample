@@ -395,7 +395,36 @@ describe('Tag CRUD API', () => {
       });
 
       it('should reject tag name with special symbols', async () => {
-        const symbols = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '?', '/'];
+        const symbols = [
+          '!',
+          '@',
+          '#',
+          '$',
+          '%',
+          '^',
+          '&',
+          '*',
+          '(',
+          ')',
+          '+',
+          '=',
+          '[',
+          ']',
+          '{',
+          '}',
+          '|',
+          '\\',
+          ':',
+          ';',
+          '"',
+          "'",
+          '<',
+          '>',
+          ',',
+          '.',
+          '?',
+          '/',
+        ];
 
         for (const symbol of symbols) {
           const res = await app.request('/api/tags', {
