@@ -24,3 +24,15 @@ export const getTodosQuerySchema = z.object({
 export type CreateTodoInput = z.infer<typeof createTodoSchema>;
 export type UpdateTodoInput = z.infer<typeof updateTodoSchema>;
 export type GetTodosQuery = z.infer<typeof getTodosQuerySchema>;
+
+// Tag validation schemas
+export const createTagSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Tag name must be at least 1 character')
+    .max(20, 'Tag name must be at most 20 characters')
+    .regex(/^[a-zA-Z0-9ぁ-んァ-ヶー一-龠\-_]+$/, 'Tag name contains invalid characters'),
+});
+
+export type CreateTagInput = z.infer<typeof createTagSchema>;

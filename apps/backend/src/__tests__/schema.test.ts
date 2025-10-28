@@ -270,11 +270,7 @@ describe('Database Schema - Tag Models', () => {
       });
 
       expect(todo.tags).toHaveLength(3);
-      expect(todo.tags.map((t) => t.tag.name)).toEqual([
-        'タグ1',
-        'タグ2',
-        'タグ3',
-      ]);
+      expect(todo.tags.map((t) => t.tag.name)).toEqual(['タグ1', 'タグ2', 'タグ3']);
     });
 
     it('should allow same tag on multiple todos', async () => {
