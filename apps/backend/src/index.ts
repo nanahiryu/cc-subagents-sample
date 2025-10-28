@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import tagsRouter from './routes/tags';
 import todosRouter from './routes/todos';
 
 const app = new Hono();
@@ -19,6 +20,7 @@ app.get('/health', (c) => c.json({ status: 'ok' }));
 
 // Routes
 app.route('/api/todos', todosRouter);
+app.route('/api/tags', tagsRouter);
 
 // Error handling
 app.onError((err, c) => {
