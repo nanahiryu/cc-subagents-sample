@@ -21,6 +21,8 @@ export const getTodosQuerySchema = z.object({
   q: z.string().optional(),
   limit: z.string().regex(/^\d+$/).optional(),
   offset: z.string().regex(/^\d+$/).optional(),
+  tags: z.string().optional(),
+  tagsMode: z.enum(['and', 'or']).optional(),
 });
 
 export type CreateTodoInput = z.infer<typeof createTodoSchema>;

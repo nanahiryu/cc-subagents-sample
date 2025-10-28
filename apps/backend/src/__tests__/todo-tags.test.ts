@@ -11,6 +11,7 @@ app.route('/api/todos', todosRouter);
 type TodoWithTags = {
   id: string;
   title: string;
+  completed: boolean;
   tags: Array<{ tag: { id: string; name: string } }>;
 };
 
@@ -342,6 +343,137 @@ describe('Todo-Tag Association API', () => {
       expect(todos).toHaveLength(2);
       expect(todos[0].tags).toBeDefined();
       expect(todos[1].tags).toBeDefined();
+    });
+  });
+
+  describe('GET /api/todos with tag filtering', () => {
+    beforeEach(async () => {
+      // Create test todos with different tag combinations
+      await app.request('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Todo 1',
+          tags: ['urgent', 'work'],
+        }),
+      });
+
+      await app.request('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Todo 2',
+          tags: ['work'],
+        }),
+      });
+
+      await app.request('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Todo 3',
+          tags: ['personal'],
+        }),
+      });
+
+      await app.request('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Todo 4',
+          tags: [],
+        }),
+      });
+    });
+
+    it('should filter todos by single tag (OR mode)', async () => {
+      const res = await app.request('/api/todos?tags=work');
+      expect(res.status).toBe(200);
+
+      const todos = (await res.json()) as TodoWithTags[];
+      expect(todos).toHaveLength(2);
+      expect(todos.every((todo) => todo.tags.some((t) => t.tag.name === 'work'))).toBe(true);
+    });
+
+    it('should filter todos by multiple tags (OR mode - default)', async () => {
+      const res = await app.request('/api/todos?tags=work,personal');
+      expect(res.status).toBe(200);
+
+      const todos = (await res.json()) as TodoWithTags[];
+      expect(todos).toHaveLength(3);
+      expect(
+        todos.every((todo) =>
+          todo.tags.some((t) => t.tag.name === 'work' || t.tag.name === 'personal'),
+        ),
+      ).toBe(true);
+    });
+
+    it('should filter todos by multiple tags (OR mode - explicit)', async () => {
+      const res = await app.request('/api/todos?tags=work,personal&tagsMode=or');
+      expect(res.status).toBe(200);
+
+      const todos = (await res.json()) as TodoWithTags[];
+      expect(todos).toHaveLength(3);
+    });
+
+    it('should filter todos by multiple tags (AND mode)', async () => {
+      const res = await app.request('/api/todos?tags=urgent,work&tagsMode=and');
+      expect(res.status).toBe(200);
+
+      const todos = (await res.json()) as TodoWithTags[];
+      expect(todos).toHaveLength(1);
+      expect(todos[0].title).toBe('Todo 1');
+      expect(todos[0].tags.some((t) => t.tag.name === 'urgent')).toBe(true);
+      expect(todos[0].tags.some((t) => t.tag.name === 'work')).toBe(true);
+    });
+
+    it('should normalize tag names when filtering', async () => {
+      const res = await app.request('/api/todos?tags=  WORK  ,URGENT');
+      expect(res.status).toBe(200);
+
+      const todos = (await res.json()) as TodoWithTags[];
+      expect(todos).toHaveLength(2);
+    });
+
+    it('should return empty array for non-existent tag', async () => {
+      const res = await app.request('/api/todos?tags=nonexistent');
+      expect(res.status).toBe(200);
+
+      const todos = (await res.json()) as TodoWithTags[];
+      expect(todos).toHaveLength(0);
+    });
+
+    it('should combine tag filter with completed filter', async () => {
+      // Mark one work todo as completed
+      const allTodosRes = await app.request('/api/todos');
+      const allTodos = (await allTodosRes.json()) as TodoWithTags[];
+      const workTodo = allTodos.find((t) => t.title === 'Todo 2');
+
+      await app.request(`/api/todos/${workTodo?.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          completed: true,
+        }),
+      });
+
+      // Filter by tag and completed status
+      const res = await app.request('/api/todos?tags=work&completed=true');
+      expect(res.status).toBe(200);
+
+      const todos = (await res.json()) as TodoWithTags[];
+      expect(todos).toHaveLength(1);
+      expect(todos[0].title).toBe('Todo 2');
+      expect(todos[0].completed).toBe(true);
+    });
+
+    it('should combine tag filter with search query', async () => {
+      const res = await app.request('/api/todos?tags=work&q=1');
+      expect(res.status).toBe(200);
+
+      const todos = (await res.json()) as TodoWithTags[];
+      expect(todos).toHaveLength(1);
+      expect(todos[0].title).toBe('Todo 1');
     });
   });
 

@@ -18,7 +18,7 @@ app.get('/', async (c) => {
     return c.json({ error: 'Invalid query parameters', details: queryResult.error.errors }, 400);
   }
 
-  const { completed, q, limit, offset } = queryResult.data;
+  const { completed, q, limit, offset, tags, tagsMode } = queryResult.data;
 
   const where: {
     completed?: boolean;
@@ -26,6 +26,24 @@ app.get('/', async (c) => {
       | { title: { contains: string; mode: 'insensitive' } }
       | { description: { contains: string; mode: 'insensitive' } }
     >;
+    AND?: Array<{
+      tags: {
+        some: {
+          tag: {
+            name: string;
+          };
+        };
+      };
+    }>;
+    tags?: {
+      some: {
+        tag: {
+          name: {
+            in: string[];
+          };
+        };
+      };
+    };
   } = {};
 
   if (completed !== undefined) {
@@ -37,6 +55,36 @@ app.get('/', async (c) => {
       { title: { contains: q, mode: 'insensitive' } },
       { description: { contains: q, mode: 'insensitive' } },
     ];
+  }
+
+  // Tag filtering
+  if (tags) {
+    const tagNames = tags.split(',').map((tag) => normalizeTagName(tag.trim()));
+    const mode = tagsMode || 'or';
+
+    if (mode === 'or') {
+      // OR mode: todos that have at least one of the specified tags
+      where.tags = {
+        some: {
+          tag: {
+            name: {
+              in: tagNames,
+            },
+          },
+        },
+      };
+    } else {
+      // AND mode: todos that have all of the specified tags
+      where.AND = tagNames.map((tagName) => ({
+        tags: {
+          some: {
+            tag: {
+              name: tagName,
+            },
+          },
+        },
+      }));
+    }
   }
 
   const todos = await prisma.todo.findMany({
