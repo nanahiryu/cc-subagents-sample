@@ -15,6 +15,25 @@ model Todo {
   completed   Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  tags        TodoTag[]
 
   @@index([completed, dueDate])
+}
+
+model Tag {
+  id        String    @id @default(uuid())
+  name      String    @unique @db.VarChar(20)
+  createdAt DateTime  @default(now())
+  todos     TodoTag[]
+}
+
+model TodoTag {
+  todoId String
+  tagId  String
+  todo   Todo   @relation(fields: [todoId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([todoId, tagId])
+  @@index([todoId])
+  @@index([tagId])
 }

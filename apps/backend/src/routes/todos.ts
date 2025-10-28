@@ -12,7 +12,7 @@ app.get('/', async (c) => {
     return c.json({ error: 'Invalid query parameters', details: queryResult.error.errors }, 400);
   }
 
-  const { completed, q, limit, offset } = queryResult.data;
+  const { completed, q, limit, offset, tags, tagsMode } = queryResult.data;
 
   const where: {
     completed?: boolean;
@@ -20,6 +20,10 @@ app.get('/', async (c) => {
       | { title: { contains: string; mode: 'insensitive' } }
       | { description: { contains: string; mode: 'insensitive' } }
     >;
+    tags?: {
+      some?: { tag: { name: { in: string[] } } };
+      every?: { tag: { name: { in: string[] } } };
+    };
   } = {};
 
   if (completed !== undefined) {
@@ -33,8 +37,71 @@ app.get('/', async (c) => {
     ];
   }
 
+  // Tag filtering
+  if (tags) {
+    const tagNames = tags.split(',').map((name) => name.trim().toLowerCase());
+
+    if (tagsMode === 'and') {
+      // For AND mode, we need a different approach
+      // We need to find todos that have ALL specified tags
+      const tagRecords = await prisma.tag.findMany({
+        where: { name: { in: tagNames } },
+      });
+
+      if (tagRecords.length === tagNames.length) {
+        // All tags exist, now find todos that have all of them
+        const tagIds = tagRecords.map((t) => t.id);
+
+        // Use raw query or multiple filters
+        const todosWithAllTags = await prisma.todo.findMany({
+          where: {
+            ...where,
+            AND: tagIds.map((tagId) => ({
+              tags: {
+                some: {
+                  tagId,
+                },
+              },
+            })),
+          },
+          include: {
+            tags: {
+              include: {
+                tag: true,
+              },
+            },
+          },
+          take: limit ? Number.parseInt(limit, 10) : undefined,
+          skip: offset ? Number.parseInt(offset, 10) : undefined,
+          orderBy: { createdAt: 'desc' },
+        });
+
+        return c.json(todosWithAllTags);
+      }
+      // Some tags don't exist, return empty array
+      return c.json([]);
+    }
+    // OR mode: todos that have at least one of the specified tags
+    where.tags = {
+      some: {
+        tag: {
+          name: {
+            in: tagNames,
+          },
+        },
+      },
+    };
+  }
+
   const todos = await prisma.todo.findMany({
     where,
+    include: {
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
+    },
     take: limit ? Number.parseInt(limit, 10) : undefined,
     skip: offset ? Number.parseInt(offset, 10) : undefined,
     orderBy: { createdAt: 'desc' },
@@ -72,6 +139,13 @@ app.get('/:id', async (c) => {
 
   const todo = await prisma.todo.findUnique({
     where: { id },
+    include: {
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
+    },
   });
 
   if (!todo) {
@@ -101,6 +175,13 @@ app.patch('/:id', async (c) => {
         ...(description !== undefined && { description }),
         ...(dueDate !== undefined && { dueDate: new Date(dueDate) }),
         ...(completed !== undefined && { completed }),
+      },
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
       },
     });
 

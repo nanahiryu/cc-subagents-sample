@@ -152,3 +152,7 @@ h1 {
 .delete-btn:hover {
   background: #c0392b;
 }
+
+.tag-input-container {
+  margin-top: 8px;
+}
