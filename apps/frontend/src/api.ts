@@ -1,4 +1,4 @@
-import type { CreateTodoInput, Todo, UpdateTodoInput } from './types';
+import type { CreateTodoInput, Tag, Todo, UpdateTodoInput } from './types';
 
 const API_BASE = '/api';
 
@@ -39,4 +39,10 @@ export async function deleteTodo(id: string): Promise<void> {
     method: 'DELETE',
   });
   if (!response.ok) throw new Error('Failed to delete todo');
+}
+
+export async function getTags(): Promise<Tag[]> {
+  const response = await fetch(`${API_BASE}/tags`);
+  if (!response.ok) throw new Error('Failed to fetch tags');
+  return response.json();
 }

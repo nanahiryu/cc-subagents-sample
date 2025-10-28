@@ -21,3 +21,9 @@ export interface UpdateTodoInput {
   dueDate?: string;
   completed?: boolean;
 }
+
+export interface Tag {
+  id: string;
+  name: string;
+  count: number;
+}
