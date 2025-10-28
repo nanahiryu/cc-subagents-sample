@@ -14,10 +14,14 @@
     "typecheck": "pnpm --filter backend typecheck && pnpm --filter frontend typecheck",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "slides:preview": "marp -s docs/slides/project-overview.md",
+    "slides:html": "marp docs/slides/project-overview.md -o docs/slides/project-overview.html",
+    "slides:pdf": "marp docs/slides/project-overview.md -o docs/slides/project-overview.pdf"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@marp-team/marp-cli": "^4.0.0",
     "@prisma/client": "^5.9.0",
     "@types/node": "^20.11.0",
     "prisma": "^5.9.0",
